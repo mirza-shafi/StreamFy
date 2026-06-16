@@ -61,6 +61,8 @@ export default function AdminPage() {
   // Stats
   const [stats, setStats] = useState({ live: 0, dead: 0, channels: 0, lastCheck: null })
   const [runningCheck, setRunningCheck] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
 
   const fetchAll = useCallback(async () => {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -248,6 +250,25 @@ export default function AdminPage() {
     setRunningCheck(false)
   }
 
+  const syncMatches = async () => {
+    setSyncing(true)
+    setSyncMsg('')
+    try {
+      const res = await fetch('/api/sync-matches', {
+        headers: { Authorization: `Bearer ${CRON_SECRET}` }
+      })
+      const data = await res.json()
+      if (data.synced !== undefined) {
+        setSyncMsg(`✅ Synced ${data.synced} matches (Cricket: ${data.cricket}, Football: ${data.football})`)
+        await fetchAll()
+      } else {
+        setSyncMsg('❌ Sync failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch { setSyncMsg('❌ Sync failed') }
+    setSyncing(false)
+    setTimeout(() => setSyncMsg(''), 6000)
+  }
+
   const clearLogs = async () => {
     if (!confirm('Clear all logs?')) return
     await supabase.from('stream_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000')
@@ -360,11 +381,16 @@ export default function AdminPage() {
           </div>
         ))}
       </div>
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap gap-3">
         <button onClick={runGlobalCheck} disabled={runningCheck}
           className="px-5 py-2.5 bg-[#e63946] text-white rounded-lg font-semibold hover:bg-red-500 disabled:opacity-50 transition-colors text-sm">
-          {runningCheck ? '⏳ Checking all streams...' : '▶ Run Stream Check Now'}
+          {runningCheck ? '⏳ Checking...' : '▶ Run Stream Check'}
         </button>
+        <button onClick={syncMatches} disabled={syncing}
+          className="px-5 py-2.5 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 transition-colors text-sm">
+          {syncing ? '⏳ Syncing...' : '🔄 Sync Cricket & Football'}
+        </button>
+        {syncMsg && <span className="text-sm self-center">{syncMsg}</span>}
       </div>
 
       {/* Tabs */}
