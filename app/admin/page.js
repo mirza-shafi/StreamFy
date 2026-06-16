@@ -302,17 +302,28 @@ export default function AdminPage() {
   }
 
   // DASHBOARD
+  const [showNoStream, setShowNoStream] = useState(false)
+  const noStreamCount = matches.filter(m => !m.stream_url && m.status !== 'finished').length
+
   const matchCols = [
-    { key: 'team1', label: 'Teams', render: (_, r) => `${r.team1} vs ${r.team2}` },
-    { key: 'tournament', label: 'Tournament' },
-    { key: 'status', label: 'Status', render: v => (
-      <span className={`text-xs font-bold px-2 py-0.5 rounded ${v === 'live' ? 'bg-red-900/40 text-red-400' : 'bg-gray-800 text-gray-400'}`}>{v}</span>
+    { key: 'team1', label: 'Teams', render: (_, r) => (
+      <div>
+        <div className="font-medium">{r.team1} vs {r.team2}</div>
+        <div className="text-xs text-gray-500 truncate max-w-[140px]">{r.tournament}</div>
+      </div>
     )},
-    { key: 'stream_status', label: 'Stream', render: (v, r) => (
+    { key: 'status', label: 'Status', render: v => (
+      <span className={`text-xs font-bold px-2 py-0.5 rounded ${v === 'live' ? 'bg-red-900/40 text-red-400' : v === 'finished' ? 'bg-gray-800 text-gray-500' : 'bg-blue-900/40 text-blue-300'}`}>{v}</span>
+    )},
+    { key: 'stream_url', label: 'Stream URL', render: (v, r) => (
       <div className="flex flex-col gap-1">
-        <StatusBadge status={v} />
+        {v ? (
+          <span className="text-xs text-green-400 truncate max-w-[120px]">✓ {v.slice(0, 30)}...</span>
+        ) : (
+          <span className="text-xs font-bold text-orange-400 bg-orange-900/30 px-2 py-0.5 rounded border border-orange-800/50">⚠ NO STREAM</span>
+        )}
+        {r.stream_status && <StatusBadge status={r.stream_status} />}
         {r.stream_auto_updated && <span className="text-xs text-purple-400">🤖 Auto</span>}
-        {r.stream_last_checked && <span className="text-xs text-gray-600">{timeAgo(r.stream_last_checked)}</span>}
       </div>
     )},
     { key: 'id', label: 'Actions', render: (_, r) => (
@@ -445,7 +456,24 @@ export default function AdminPage() {
               </div>
             </form>
           </div>
-          <AdminTable columns={matchCols} rows={matches} onEdit={editMatch} onDelete={deleteMatch} />
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-white">All Matches ({matches.length})</h2>
+              <button onClick={() => setShowNoStream(s => !s)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                  showNoStream ? 'bg-orange-900/40 text-orange-400 border-orange-800/50' : 'bg-[#2a2a2a] text-gray-400 border-[#3a3a3a] hover:border-orange-700'
+                }`}>
+                ⚠ No Stream
+                <span className="bg-orange-900/60 text-orange-300 px-1.5 py-0.5 rounded-full">{noStreamCount}</span>
+              </button>
+            </div>
+            <AdminTable
+              columns={matchCols}
+              rows={showNoStream ? matches.filter(m => !m.stream_url && m.status !== 'finished') : matches}
+              onEdit={editMatch}
+              onDelete={deleteMatch}
+            />
+          </div>
         </div>
       )}
 
