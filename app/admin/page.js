@@ -63,6 +63,7 @@ export default function AdminPage() {
   const [runningCheck, setRunningCheck] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
+  const [showNoStream, setShowNoStream] = useState(false)
 
   const fetchAll = useCallback(async () => {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -302,7 +303,6 @@ export default function AdminPage() {
   }
 
   // DASHBOARD
-  const [showNoStream, setShowNoStream] = useState(false)
   const noStreamCount = matches.filter(m => !m.stream_url && m.status !== 'finished').length
 
   const matchCols = [
