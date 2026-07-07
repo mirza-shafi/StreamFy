@@ -7,7 +7,12 @@ export default function MatchCard({ match }) {
   const isFinished = status === 'finished'
 
   const formattedTime = match_time
-    ? new Date(match_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    ? new Date(match_time).toLocaleString('en-US', {
+        timeZone: 'Asia/Dhaka',
+        dateStyle: 'medium',
+        timeStyle: 'short',   // 12h format (e.g. 8:30 PM)
+        hour12: true,
+      })
     : 'TBA'
 
   return (

@@ -35,27 +35,62 @@ function MatchesContent() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    supabase.from('matches').select('*').order('match_time', { ascending: true })
-      .then(({ data }) => { setMatches(data || []); setLoading(false) })
-  }, [])
+    // Today's start — exclude yesterday and older by default
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const todayISO = todayStart.toISOString()
+
+    if (statusTab === 'Finished') {
+      // "Finished" tab: show old finished matches (user explicitly wants these)
+      supabase
+        .from('matches')
+        .select('*')
+        .eq('status', 'finished')
+        .order('match_time', { ascending: false })
+        .limit(50)
+        .then(({ data }) => { setMatches(data || []); setLoading(false) })
+    } else {
+      // Default: only today & future, no finished matches
+      supabase
+        .from('matches')
+        .select('*')
+        .neq('status', 'finished')          // exclude finished
+        .gte('match_time', todayISO)        // today onwards only
+        .order('match_time', { ascending: true })
+        .then(({ data }) => { setMatches(data || []); setLoading(false) })
+    }
+  }, [statusTab]) // re-fetch when tab changes
 
   const filtered = matches.filter((m) => {
-    const matchStatus = statusTab === 'All' || m.status?.toLowerCase() === statusTab.toLowerCase()
+    const matchStatus =
+      statusTab === 'All' || statusTab === 'Finished' ||
+      m.status?.toLowerCase() === statusTab.toLowerCase()
     const matchSport = sportTab === 'all' || getSport(m) === sportTab
     const matchSearch = !search || [m.team1, m.team2, m.tournament].some(
-      v => v?.toLowerCase().includes(search.toLowerCase())
+      (v) => v?.toLowerCase().includes(search.toLowerCase())
     )
     return matchStatus && matchSport && matchSearch
   })
 
   const counts = {}
   for (const cat of SPORT_CATEGORIES) {
-    counts[cat.key] = cat.key === 'all' ? matches.length : matches.filter(m => getSport(m) === cat.key).length
+    counts[cat.key] = cat.key === 'all'
+      ? filtered.length
+      : filtered.filter((m) => getSport(m) === cat.key).length
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-white mb-6">All Matches</h1>
+      <div className="flex items-center gap-3 flex-wrap mb-6">
+        <h1 className="text-2xl font-bold text-white">
+          {statusTab === 'Finished' ? '🕐 Past Matches' : '📅 Matches'}
+        </h1>
+        {statusTab !== 'Finished' && (
+          <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs px-3 py-1 rounded-full">
+            {new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </span>
+        )}
+      </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 mb-4">
         {SPORT_CATEGORIES.map(cat => (

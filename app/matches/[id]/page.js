@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import VideoPlayer from '@/components/VideoPlayer'
+import LiveMatchPlayer from '@/components/LiveMatchPlayer'
 import MatchCard from '@/components/MatchCard'
 import { notFound } from 'next/navigation'
 
@@ -17,13 +17,24 @@ export const revalidate = 30
 export default async function WatchMatchPage({ params }) {
   const [{ data: match }, { data: related }] = await Promise.all([
     supabase.from('matches').select('*').eq('id', params.id).single(),
-    supabase.from('matches').select('*').neq('id', params.id).in('status', ['live', 'upcoming']).limit(3),
+    supabase
+      .from('matches')
+      .select('*')
+      .neq('id', params.id)
+      .in('status', ['live', 'upcoming'])
+      .limit(3),
   ])
 
   if (!match) notFound()
 
+  // Bangladesh Standard Time (UTC+6), 12-hour format
   const formattedTime = match.match_time
-    ? new Date(match.match_time).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })
+    ? new Date(match.match_time).toLocaleString('en-US', {
+        timeZone: 'Asia/Dhaka',
+        dateStyle: 'full',
+        timeStyle: 'short',
+        hour12: true,
+      })
     : 'TBA'
 
   const isLive = match.status === 'live'
@@ -31,18 +42,23 @@ export default async function WatchMatchPage({ params }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Main content */}
+        {/* ── Main content ── */}
         <div className="xl:col-span-2">
-          <VideoPlayer
-            streamUrl={match.stream_url}
-            streamUrl2={match.stream_url_2 || match.backup_stream_url}
-            streamUrl3={match.stream_url_3}
-            title={`${match.team1} vs ${match.team2}`}
-          />
+          {isLive ? (
+            /* Live match → channel chooser player */
+            <LiveMatchPlayer match={match} />
+          ) : (
+            /* Upcoming / finished → simple upcoming notice */
+            <div className="relative w-full rounded-xl overflow-hidden bg-[#1a1a1a] border border-[#2a2a2a] flex flex-col items-center justify-center gap-4 py-20">
+              <div className="text-5xl">⏳</div>
+              <p className="text-white font-semibold text-lg">Match not started yet</p>
+              <p className="text-gray-400 text-sm">{formattedTime}</p>
+            </div>
+          )}
 
-          {/* Match info */}
+          {/* Match info panel */}
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 mt-4">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
               {isLive ? (
                 <span className="flex items-center gap-1.5 bg-red-900/30 text-[#e63946] text-xs font-bold px-2.5 py-1 rounded-full border border-red-800/50">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#e63946] live-dot" />
@@ -53,33 +69,37 @@ export default async function WatchMatchPage({ params }) {
                   {match.status?.toUpperCase()}
                 </span>
               )}
-              {match.tournament && <span className="text-gray-400 text-sm">{match.tournament}</span>}
+              {match.tournament && (
+                <span className="text-gray-400 text-sm">{match.tournament}</span>
+              )}
             </div>
 
             <div className="flex items-center justify-around py-4">
               <div className="text-center">
-                <div className="text-4xl mb-2">{match.team1_flag || '🏆'}</div>
-                <div className="font-bold text-lg text-white">{match.team1}</div>
+                <div className="text-5xl mb-2">{match.team1_flag || '🏆'}</div>
+                <div className="font-bold text-xl text-white">{match.team1}</div>
               </div>
-              <div className="text-gray-500 font-black text-2xl">VS</div>
+              <div className="text-gray-500 font-black text-3xl">VS</div>
               <div className="text-center">
-                <div className="text-4xl mb-2">{match.team2_flag || '🏆'}</div>
-                <div className="font-bold text-lg text-white">{match.team2}</div>
+                <div className="text-5xl mb-2">{match.team2_flag || '🏆'}</div>
+                <div className="font-bold text-xl text-white">{match.team2}</div>
               </div>
             </div>
 
             <div className="border-t border-[#2a2a2a] pt-4 text-sm text-gray-400">
-              🕐 {formattedTime}
+              🕐 {formattedTime} <span className="text-gray-600 ml-1">(Bangladesh Time)</span>
             </div>
           </div>
         </div>
 
-        {/* Sidebar - Related */}
+        {/* ── Sidebar: Related matches ── */}
         {related?.length > 0 && (
           <div>
             <h2 className="text-lg font-bold text-white mb-4">Other Matches</h2>
             <div className="flex flex-col gap-3">
-              {related.map((m) => <MatchCard key={m.id} match={m} />)}
+              {related.map((m) => (
+                <MatchCard key={m.id} match={m} />
+              ))}
             </div>
           </div>
         )}
