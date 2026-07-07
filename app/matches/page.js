@@ -15,9 +15,11 @@ const SPORT_CATEGORIES = [
 
 function getSport(m) {
   const t = (m.tournament || '').toLowerCase()
-  if (t.includes('world cup') || t.includes('fifa')) return 'worldcup'
+  // Cricket World Cups must be checked BEFORE generic 'world cup'
   if (t.includes('cricket') || t.includes('icc') || t.includes('t20') ||
-      t.includes('tour of') || t.includes('tri nation')) return 'cricket'
+      t.includes('tour of') || t.includes('tri nation') || t.includes('test')) return 'cricket'
+  // FIFA / football World Cup
+  if (t.includes('fifa') || (t.includes('world cup') && !t.includes('cricket'))) return 'worldcup'
   return 'football'
 }
 
@@ -35,10 +37,11 @@ function MatchesContent() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    // Today's start — exclude yesterday and older by default
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const todayISO = todayStart.toISOString()
+    // Start of today in Bangladesh time (UTC+6) — correct midnight for BST users
+    const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
+    const todayStartBST = new Date(nowBST)
+    todayStartBST.setHours(0, 0, 0, 0)
+    const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
 
     if (statusTab === 'Finished') {
       // "Finished" tab: show old finished matches (user explicitly wants these)
@@ -65,18 +68,29 @@ function MatchesContent() {
     const matchStatus =
       statusTab === 'All' || statusTab === 'Finished' ||
       m.status?.toLowerCase() === statusTab.toLowerCase()
-    const matchSport = sportTab === 'all' || getSport(m) === sportTab
+    const sport = getSport(m)
+    const matchSport =
+      sportTab === 'all' ||
+      sport === sportTab ||
+      // Football tab also includes World Cup (FIFA WC is football)
+      (sportTab === 'football' && sport === 'worldcup')
     const matchSearch = !search || [m.team1, m.team2, m.tournament].some(
       (v) => v?.toLowerCase().includes(search.toLowerCase())
     )
     return matchStatus && matchSport && matchSearch
   })
 
+  // Counts always computed from all fetched matches (not post-filtered), so tabs show real totals
   const counts = {}
   for (const cat of SPORT_CATEGORIES) {
-    counts[cat.key] = cat.key === 'all'
-      ? filtered.length
-      : filtered.filter((m) => getSport(m) === cat.key).length
+    if (cat.key === 'all') {
+      counts[cat.key] = matches.length
+    } else if (cat.key === 'football') {
+      // Football includes both plain football AND World Cup (World Cup IS football)
+      counts[cat.key] = matches.filter((m) => getSport(m) === 'football' || getSport(m) === 'worldcup').length
+    } else {
+      counts[cat.key] = matches.filter((m) => getSport(m) === cat.key).length
+    }
   }
 
   return (

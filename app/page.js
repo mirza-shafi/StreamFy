@@ -14,22 +14,22 @@ export const revalidate = 60
 
 function getSport(m) {
   const t = (m.tournament || '').toLowerCase()
-  if (t.includes('world cup') || t.includes('fifa')) return 'worldcup'
+  // Cricket World Cups must be checked BEFORE generic 'world cup' so they don't fall into FIFA WC
   if (t.includes('cricket') || t.includes('icc') || t.includes('t20') ||
-      t.includes('tour of') || t.includes('tri nation')) return 'cricket'
+      t.includes('tour of') || t.includes('tri nation') || t.includes('test')) return 'cricket'
+  // FIFA / football World Cup
+  if (t.includes('fifa') || (t.includes('world cup') && !t.includes('cricket'))) return 'worldcup'
   return 'football'
 }
 
-/** Returns true when a match's match_time falls on today (server local date) */
+/** Returns true when a match's match_time falls on today in Bangladesh time (BST = UTC+6) */
 function isToday(matchTime) {
   if (!matchTime) return false
-  const match = new Date(matchTime)
-  const now = new Date()
-  return (
-    match.getFullYear() === now.getFullYear() &&
-    match.getMonth() === now.getMonth() &&
-    match.getDate() === now.getDate()
-  )
+  // Use BST (UTC+6) for comparison so midnight rollover is correct for Bangladesh
+  const opts = { timeZone: 'Asia/Dhaka' }
+  const matchDate = new Date(matchTime).toLocaleDateString('en-CA', opts)  // YYYY-MM-DD
+  const todayDate = new Date().toLocaleDateString('en-CA', opts)
+  return matchDate === todayDate
 }
 
 /** Format today's date in Bangladesh timezone, e.g. "Tuesday, July 8, 2026" */
@@ -44,20 +44,28 @@ function formatTodayDate() {
 }
 
 async function getData() {
-  // Start of today in ISO format — used to exclude yesterday & older from DB
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const todayISO = todayStart.toISOString()
+  // Start of today in Bangladesh time (UTC+6)
+  // We calculate midnight BST then convert to ISO for Supabase
+  const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
+  const todayStartBST = new Date(nowBST)
+  todayStartBST.setHours(0, 0, 0, 0)
+  // Offset from BST back to UTC: BST = UTC+6, so subtract 6 hours
+  const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
 
   const [{ data: liveMatches }, { data: allUpcoming }, { data: channels }] = await Promise.all([
-    // Live matches — always show regardless of date
-    supabase.from('matches').select('*').eq('status', 'live').order('match_time'),
+    // Live matches — only from today onwards (skip stale 'live' rows from previous days)
+    supabase
+      .from('matches')
+      .select('*')
+      .eq('status', 'live')
+      .gte('match_time', todayISO)   // >= today 00:00 BST — no yesterday
+      .order('match_time'),
     // Upcoming: only from today onwards, never finished
     supabase
       .from('matches')
       .select('*')
       .eq('status', 'upcoming')
-      .gte('match_time', todayISO)   // >= today 00:00:00 — no yesterday, no old
+      .gte('match_time', todayISO)   // >= today 00:00 BST — no old matches
       .order('match_time')
       .limit(50),
     supabase
@@ -71,21 +79,44 @@ async function getData() {
   const live = liveMatches || []
   const upcoming = allUpcoming || []
 
-  // Today's matches: live OR upcoming with match_time = today
+  // Sort helper — ascending match_time
+  const byTime = (a, b) => new Date(a.match_time) - new Date(b.match_time)
+
+  // Today's matches: live + today's upcoming, sorted by time (live first within same time)
+  const todayUpcoming = upcoming.filter((m) => isToday(m.match_time))
   const todayMatches = [
-    ...live,
-    ...upcoming.filter((m) => isToday(m.match_time)),
+    ...live.sort(byTime),
+    ...todayUpcoming.sort(byTime),
   ]
 
-  // Future upcoming (tomorrow+), max 12
-  const upcomingMatches = upcoming
-    .filter((m) => !isToday(m.match_time))
-    .slice(0, 12)
+  // Future upcoming (tomorrow+)
+  const futureUpcoming = upcoming.filter((m) => !isToday(m.match_time)).sort(byTime)
+
+  // Sport buckets for upcoming sections
+  const upWC = futureUpcoming.filter((m) => getSport(m) === 'worldcup').slice(0, 9)
+  // Football section: plain football + World Cup (so it's never empty during WC season)
+  const upFootball = futureUpcoming.filter(
+    (m) => getSport(m) === 'football' || getSport(m) === 'worldcup'
+  ).slice(0, 6)
+  const upCricket  = futureUpcoming.filter((m) => getSport(m) === 'cricket').slice(0, 6)
+
+  // Also today's per-sport for sections
+  const todayWC       = todayMatches.filter((m) => getSport(m) === 'worldcup')
+  // Football today: plain football + WC matches
+  const todayFootball = todayMatches.filter(
+    (m) => getSport(m) === 'football' || getSport(m) === 'worldcup'
+  )
+  const todayCricket  = todayMatches.filter((m) => getSport(m) === 'cricket')
 
   return {
     liveMatches: live,
     todayMatches,
-    upcomingMatches,
+    upWC,
+    upFootball,
+    upCricket,
+    todayWC,
+    todayFootball,
+    todayCricket,
     channels: channels || [],
     todayLabel: formatTodayDate(),
   }
@@ -123,22 +154,14 @@ function Section({ title, badge, matches, viewAllHref, viewAllLabel, highlight }
 }
 
 export default async function HomePage() {
-  const { liveMatches, todayMatches, upcomingMatches, channels, todayLabel } = await getData()
+  const {
+    liveMatches, todayMatches,
+    upWC, upFootball, upCricket,
+    todayWC, todayFootball, todayCricket,
+    channels, todayLabel,
+  } = await getData()
 
-  const liveWC = liveMatches.filter((m) => getSport(m) === 'worldcup')
-  const liveCricket = liveMatches.filter((m) => getSport(m) === 'cricket')
-  const liveFootball = liveMatches.filter(
-    (m) => getSport(m) === 'football' && getSport(m) !== 'worldcup'
-  )
-  const otherLive = liveMatches.filter(
-    (m) => !['worldcup', 'cricket', 'football'].includes(getSport(m))
-  )
-
-  const upWC = upcomingMatches.filter((m) => getSport(m) === 'worldcup').slice(0, 6)
-  const upCricket = upcomingMatches.filter((m) => getSport(m) === 'cricket').slice(0, 3)
-  const upFootball = upcomingMatches.filter((m) => getSport(m) === 'football').slice(0, 3)
-
-  const hasContent = liveMatches.length > 0 || todayMatches.length > 0 || upcomingMatches.length > 0
+  const hasContent = todayMatches.length > 0 || upWC.length > 0 || upFootball.length > 0 || upCricket.length > 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -176,14 +199,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── TODAY'S MATCHES ── */}
+      {/* ── TODAY'S MATCHES (All Sports, time-sorted, live first) ── */}
       {todayMatches.length > 0 && (
         <section className="mb-10">
-          {/* Section header with live date */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-xl font-bold text-white">📅 Today&apos;s Matches</h2>
-              {/* Always-current date badge */}
               <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs px-3 py-1 rounded-full">
                 {todayLabel}
               </span>
@@ -194,77 +215,90 @@ export default async function HomePage() {
                 </span>
               )}
             </div>
-            <Link
-              href="/matches"
-              className="text-sm text-[#e63946] hover:text-red-400 transition-colors"
-            >
+            <Link href="/matches" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
               All matches →
             </Link>
           </div>
-
-          {/* Today matches grid — live ones first */}
+          {/* Live first, then upcoming — all sorted by match_time */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              ...todayMatches.filter((m) => m.status === 'live'),
-              ...todayMatches.filter((m) => m.status !== 'live'),
-            ].map((m) => (
+            {todayMatches.map((m) => (
               <MatchCard key={m.id} match={m} />
             ))}
           </div>
         </section>
       )}
 
-      {/* ── LIVE sections (sport-grouped, if not already shown above) ── */}
-      {liveWC.length > 0 && (
-        <Section
-          title="🏆 World Cup — Live"
-          badge={`${liveWC.length} LIVE`}
-          matches={liveWC}
-          viewAllHref="/matches?sport=worldcup"
-        />
-      )}
-      {liveCricket.length > 0 && (
-        <Section
-          title="🏏 Cricket — Live"
-          badge={`${liveCricket.length} LIVE`}
-          matches={liveCricket}
-          viewAllHref="/matches?sport=cricket"
-        />
-      )}
-      {liveFootball.length > 0 && (
-        <Section
-          title="⚽ Football — Live"
-          badge={`${liveFootball.length} LIVE`}
-          matches={liveFootball}
-          viewAllHref="/matches?sport=football"
-        />
-      )}
-      {otherLive.length > 0 && (
-        <Section title="🔴 Live Now" matches={otherLive} viewAllHref="/live" />
+      {/* ── FIFA WORLD CUP 2026 ── */}
+      {(todayWC.length > 0 || upWC.length > 0) && (
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-white">🏆 FIFA World Cup 2026</h2>
+              {todayWC.filter(m => m.status === 'live').length > 0 && (
+                <span className="bg-red-900/30 text-[#e63946] text-xs font-bold px-2 py-0.5 rounded-full border border-red-800/50">
+                  {todayWC.filter(m => m.status === 'live').length} LIVE
+                </span>
+              )}
+            </div>
+            <Link href="/matches?sport=worldcup" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
+              All WC matches →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Today's WC first, then upcoming WC — both already time-sorted */}
+            {[...todayWC, ...upWC].map((m) => (
+              <MatchCard key={m.id} match={m} />
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* ── UPCOMING sections ── */}
-      {upWC.length > 0 && (
-        <Section
-          title="🏆 FIFA World Cup 2026"
-          matches={upWC}
-          viewAllHref="/matches?sport=worldcup"
-          viewAllLabel="All WC matches →"
-        />
+      {/* ── FOOTBALL ── */}
+      {(todayFootball.length > 0 || upFootball.length > 0) && (
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-white">⚽ Football</h2>
+              {todayFootball.filter(m => m.status === 'live').length > 0 && (
+                <span className="bg-red-900/30 text-[#e63946] text-xs font-bold px-2 py-0.5 rounded-full border border-red-800/50">
+                  {todayFootball.filter(m => m.status === 'live').length} LIVE
+                </span>
+              )}
+            </div>
+            <Link href="/matches?sport=football" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
+              All football →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...todayFootball, ...upFootball].map((m) => (
+              <MatchCard key={m.id} match={m} />
+            ))}
+          </div>
+        </section>
       )}
-      {upCricket.length > 0 && (
-        <Section
-          title="🏏 Upcoming Cricket"
-          matches={upCricket}
-          viewAllHref="/matches?sport=cricket"
-        />
-      )}
-      {upFootball.length > 0 && (
-        <Section
-          title="⚽ Upcoming Football"
-          matches={upFootball}
-          viewAllHref="/matches?sport=football"
-        />
+
+      {/* ── CRICKET ── */}
+      {(todayCricket.length > 0 || upCricket.length > 0) && (
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-white">🏏 Cricket</h2>
+              {todayCricket.filter(m => m.status === 'live').length > 0 && (
+                <span className="bg-red-900/30 text-[#e63946] text-xs font-bold px-2 py-0.5 rounded-full border border-red-800/50">
+                  {todayCricket.filter(m => m.status === 'live').length} LIVE
+                </span>
+              )}
+            </div>
+            <Link href="/matches?sport=cricket" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
+              All cricket →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...todayCricket, ...upCricket].map((m) => (
+              <MatchCard key={m.id} match={m} />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* ── CHANNELS ── */}

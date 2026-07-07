@@ -8,7 +8,18 @@ export default function LivePage() {
   const [loading, setLoading] = useState(true)
 
   const fetchMatches = async () => {
-    const { data } = await supabase.from('matches').select('*').eq('status', 'live').order('created_at', { ascending: false })
+    // Start of today in Bangladesh time (UTC+6) — no stale old 'live' rows
+    const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
+    const todayStartBST = new Date(nowBST)
+    todayStartBST.setHours(0, 0, 0, 0)
+    const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
+
+    const { data } = await supabase
+      .from('matches')
+      .select('*')
+      .eq('status', 'live')
+      .gte('match_time', todayISO)   // >= today 00:00 BST — hide yesterday's stale live rows
+      .order('match_time', { ascending: true })
     setMatches(data || [])
     setLoading(false)
   }
