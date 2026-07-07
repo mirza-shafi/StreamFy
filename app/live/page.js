@@ -3,18 +3,14 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import MatchCard from '@/components/MatchCard'
 
-import { isMatchExpired } from '@/lib/matchHelpers'
+import { isMatchExpired, getTodayISO } from '@/lib/matchHelpers'
 
 export default function LivePage() {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchMatches = async () => {
-    // Start of today in Bangladesh time (UTC+6) — no stale old 'live' rows
-    const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
-    const todayStartBST = new Date(nowBST)
-    todayStartBST.setHours(0, 0, 0, 0)
-    const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
+    const todayISO = getTodayISO()
 
     const { data } = await supabase
       .from('matches')

@@ -9,7 +9,7 @@ export const metadata = {
   description: 'Watch live FIFA World Cup, cricket, and sports matches on StreamFy.',
 }
 
-import { isMatchExpired } from '@/lib/matchHelpers'
+import { isMatchExpired, getTodayISO } from '@/lib/matchHelpers'
 
 // Revalidate every 60 seconds so "today" always stays fresh
 export const revalidate = 60
@@ -46,13 +46,7 @@ function formatTodayDate() {
 }
 
 async function getData() {
-  // Start of today in Bangladesh time (UTC+6)
-  // We calculate midnight BST then convert to ISO for Supabase
-  const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
-  const todayStartBST = new Date(nowBST)
-  todayStartBST.setHours(0, 0, 0, 0)
-  // Offset from BST back to UTC: BST = UTC+6, so subtract 6 hours
-  const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
+  const todayISO = getTodayISO()
 
   const [{ data: liveMatches }, { data: allUpcoming }, { data: channels }] = await Promise.all([
     // Live matches — only from today onwards (skip stale 'live' rows from previous days)

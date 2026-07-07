@@ -14,12 +14,10 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 30
 
+import { getTodayISO } from '@/lib/matchHelpers'
+
 export default async function WatchMatchPage({ params }) {
-  // Start of today in Bangladesh time (UTC+6) — exclude yesterday's stale matches
-  const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
-  const todayStartBST = new Date(nowBST)
-  todayStartBST.setHours(0, 0, 0, 0)
-  const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
+  const todayISO = getTodayISO()
 
   const [{ data: match }, { data: related }] = await Promise.all([
     supabase.from('matches').select('*').eq('id', params.id).single(),
