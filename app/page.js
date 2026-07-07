@@ -45,10 +45,12 @@ function formatTodayDate() {
   })
 }
 
+
+
 async function getData() {
   const todayISO = getTodayISO()
 
-  const [{ data: liveMatches }, { data: allUpcoming }, { data: channels }] = await Promise.all([
+  const [{ data: liveMatches }, { data: allUpcoming }, { data: dbChannels }] = await Promise.all([
     // Live matches — only from today onwards (skip stale 'live' rows from previous days)
     supabase
       .from('matches')
@@ -64,15 +66,16 @@ async function getData() {
       .gte('match_time', todayISO)   // >= today 00:00 BST — no old matches
       .order('match_time')
       .limit(50),
+    // All active DB channels
     supabase
       .from('channels')
       .select('*')
       .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(8),
+      .order('name')
+      .limit(16),
   ])
 
-  // Filter out dynamically expired live matches (football > 4h, cricket > 8h)
+  // Filter out dynamically expired live matches (football > 3h, cricket > 8h)
   const live = (liveMatches || []).filter(m => !isMatchExpired(m))
   const upcoming = allUpcoming || []
 
@@ -114,7 +117,7 @@ async function getData() {
     todayWC,
     todayFootball,
     todayCricket,
-    channels: channels || [],
+    channels: dbChannels || [],
     todayLabel: formatTodayDate(),
   }
 }
