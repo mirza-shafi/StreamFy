@@ -3,7 +3,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
 export const metadata = {
-  metadataBase: new URL('https://streamfy.vercel.app'),
+  metadataBase: new URL('https://streamfy.mirzashafi.com'),
   title: { default: 'StreamFy - Live Sports Streaming', template: '%s | StreamFy' },
   description: 'Watch live sports matches, football, cricket, and more on StreamFy.',
   keywords: 'live sports, streaming, football, cricket, watch live',

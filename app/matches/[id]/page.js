@@ -112,6 +112,33 @@ export default async function WatchMatchPage({ params }) {
           </div>
         )}
       </div>
+
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SportsEvent',
+            name: `${match.team1} vs ${match.team2}`,
+            description: `Live sports stream: ${match.team1} vs ${match.team2} ${match.tournament ? `in ${match.tournament}` : ''}`,
+            startDate: match.match_time,
+            eventStatus: isLive ? 'https://schema.org/EventInProgress' : 'https://schema.org/EventScheduled',
+            homeTeam: {
+              '@type': 'SportsTeam',
+              name: match.team1,
+            },
+            awayTeam: {
+              '@type': 'SportsTeam',
+              name: match.team2,
+            },
+            location: {
+              '@type': 'VirtualLocation',
+              url: `https://streamfy.mirzashafi.com/matches/${match.id}`,
+            },
+          }),
+        }}
+      />
     </div>
   )
 }
