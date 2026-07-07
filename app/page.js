@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import MatchCard from '@/components/MatchCard'
-import ChannelCard from '@/components/ChannelCard'
+import HomepageChannels from '@/components/HomepageChannels'
 import Link from 'next/link'
 
 export const metadata = {
@@ -179,10 +179,10 @@ export default async function HomePage() {
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link
-            href="/matches?sport=worldcup"
+            href="/matches"
             className="px-4 py-2 text-xs bg-[#e63946] text-white rounded-lg font-semibold hover:bg-red-500 transition-colors"
           >
-            🏆 World Cup
+            🌐 All Sports
           </Link>
           <Link
             href="/matches?sport=cricket"
@@ -191,10 +191,10 @@ export default async function HomePage() {
             🏏 Cricket
           </Link>
           <Link
-            href="/matches"
+            href="/matches?sport=worldcup"
             className="px-4 py-2 text-xs bg-[#2a2a2a] text-white rounded-lg font-semibold hover:bg-[#3a3a3a] transition-colors"
           >
-            ⚽ All Matches
+            🏆 World Cup
           </Link>
         </div>
       </section>
@@ -302,21 +302,7 @@ export default async function HomePage() {
       )}
 
       {/* ── CHANNELS ── */}
-      {channels.length > 0 && (
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-white">📺 TV Channels</h2>
-            <Link href="/channels" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
-              View all →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {channels.map((c) => (
-              <ChannelCard key={c.id} channel={c} />
-            ))}
-          </div>
-        </section>
-      )}
+      <HomepageChannels />
 
       {/* Empty state */}
       {!hasContent && (
