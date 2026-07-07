@@ -142,8 +142,11 @@ export default function LiveMatchPlayer({ match }) {
   // Filter relevant M3U channels for this match
   const relevantM3U = filterM3UChannels(m3uChannels, match)
 
-  // All channels merged
-  const allChannels = [...dbStreams, ...relevantM3U]
+  // All channels merged (Filter out HTTP if we are on HTTPS to avoid Mixed Content block)
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const allChannels = [...dbStreams, ...relevantM3U].filter(
+    ch => !isHttps || ch.url.startsWith('https://')
+  )
   const activeChannel = allChannels[activeIdx]
 
   // Fetch M3U channels
@@ -156,7 +159,15 @@ export default function LiveMatchPlayer({ match }) {
 
   const handleError = useCallback(() => {
     setPlayerState('error')
-  }, [])
+    // Automatically skip to next channel if available
+    setActiveIdx((current) => {
+      if (current < allChannels.length - 1) {
+        setTimeout(() => setPlayerState('loading'), 1500) // brief delay to show skip
+        return current + 1
+      }
+      return current // stay on last channel if no more
+    })
+  }, [allChannels.length])
 
   const handleReady = useCallback(() => {
     setPlayerState('playing')
@@ -192,8 +203,8 @@ export default function LiveMatchPlayer({ match }) {
         <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black gap-3 text-center px-4">
             <div className="text-4xl">📡</div>
-            <p className="text-white font-semibold">No streams available</p>
-            <p className="text-gray-400 text-sm">No stream URLs have been added for this match yet.</p>
+            <p className="text-white font-semibold">No compatible streams available</p>
+            <p className="text-gray-400 text-sm">Either no streams exist, or they are blocked by browser security (HTTP).</p>
           </div>
         </div>
       </div>
@@ -207,22 +218,26 @@ export default function LiveMatchPlayer({ match }) {
         {/* DB Streams row */}
         {dbStreams.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
-            {dbStreams.map((ch, i) => (
+            {dbStreams.map((ch, i) => {
+              // Find its index in allChannels
+              const globalIdx = allChannels.findIndex(a => a.id === ch.id)
+              if (globalIdx === -1) return null
+              return (
               <button
                 key={ch.id}
-                onClick={() => switchChannel(i)}
+                onClick={() => switchChannel(globalIdx)}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                  activeIdx === i
+                  activeIdx === globalIdx
                     ? 'bg-[#e63946] text-white shadow-lg shadow-red-900/30'
                     : 'bg-[#2a2a2a] text-gray-300 hover:bg-[#3a3a3a] border border-[#3a3a3a]'
                 }`}
               >
-                {activeIdx === i && playerState === 'playing' && (
+                {activeIdx === globalIdx && playerState === 'playing' && (
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 )}
                 {ch.name}
               </button>
-            ))}
+            )})}
           </div>
         )}
 
@@ -231,7 +246,8 @@ export default function LiveMatchPlayer({ match }) {
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin" style={{ scrollbarWidth: 'thin' }}>
             <span className="text-xs text-gray-600 self-center shrink-0 pr-1">📺 Live Channels:</span>
             {relevantM3U.map((ch, i) => {
-              const globalIdx = dbStreams.length + i
+              const globalIdx = allChannels.findIndex(a => a.id === ch.id)
+              if (globalIdx === -1) return null
               return (
                 <button
                   key={ch.id}
@@ -285,22 +301,18 @@ export default function LiveMatchPlayer({ match }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 px-4 text-center gap-3">
             <div className="text-4xl">📡</div>
             <p className="text-white font-semibold">{activeChannel?.name} unavailable</p>
-            <p className="text-gray-400 text-sm">Try a different channel below.</p>
-            <div className="flex gap-2">
+            <p className="text-gray-400 text-sm">
+              {activeIdx < allChannels.length - 1 
+                ? 'Auto-skipping to next channel...' 
+                : 'No more working channels.'}
+            </p>
+            <div className="flex gap-2 mt-2">
               <button
                 onClick={retry}
                 className="px-4 py-2 bg-[#2a2a2a] text-white rounded-lg text-sm hover:bg-[#3a3a3a] transition-colors"
               >
-                ↺ Retry
+                ↺ Retry manually
               </button>
-              {activeIdx < allChannels.length - 1 && (
-                <button
-                  onClick={() => switchChannel(activeIdx + 1)}
-                  className="px-4 py-2 bg-[#e63946] text-white rounded-lg text-sm hover:bg-red-500 transition-colors"
-                >
-                  Next Channel →
-                </button>
-              )}
             </div>
           </div>
         )}
