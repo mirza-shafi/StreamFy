@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { checkStream } from '@/lib/streamChecker'
 import { findStreamForMatch, findStreamForChannel } from '@/lib/autoStreamFinder'
 import { alertStreamDown, alertStreamFixed, alertStreamNotFound } from '@/lib/telegramAlert'
+import { isMatchExpired } from '@/lib/matchHelpers'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -104,9 +105,19 @@ export async function GET(request) {
       supabase.from('channels').select('*').eq('is_active', true),
     ])
 
+    // Filter out expired live matches and update their status to finished in the database
+    const activeMatches = []
+    for (const match of (matches || [])) {
+      if (isMatchExpired(match)) {
+        await supabase.from('matches').update({ status: 'finished' }).eq('id', match.id)
+        continue
+      }
+      activeMatches.push(match)
+    }
+
     const results = { checked: 0, fixed: 0, dead: 0, alive: 0, timestamp: new Date().toISOString() }
 
-    const matchResults = await Promise.all((matches || []).map(processMatch))
+    const matchResults = await Promise.all(activeMatches.map(processMatch))
     const channelResults = await Promise.all((channels || []).map(processChannel))
 
     for (const r of [...matchResults, ...channelResults]) {

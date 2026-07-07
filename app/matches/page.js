@@ -2,7 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import MatchCard from '@/components/MatchCard'
+import { isMatchExpired } from '@/lib/matchHelpers'
 
 const STATUS_TABS = ['All', 'Live', 'Upcoming', 'Finished']
 
@@ -60,7 +60,14 @@ function MatchesContent() {
         .neq('status', 'finished')          // exclude finished
         .gte('match_time', todayISO)        // today onwards only
         .order('match_time', { ascending: true })
-        .then(({ data }) => { setMatches(data || []); setLoading(false) })
+        .then(({ data }) => {
+          const activeMatches = (data || []).filter(m => {
+            if (m.status === 'live' && isMatchExpired(m)) return false
+            return true
+          })
+          setMatches(activeMatches)
+          setLoading(false)
+        })
     }
   }, [statusTab]) // re-fetch when tab changes
 

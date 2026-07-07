@@ -9,6 +9,8 @@ export const metadata = {
   description: 'Watch live FIFA World Cup, cricket, and sports matches on StreamFy.',
 }
 
+import { isMatchExpired } from '@/lib/matchHelpers'
+
 // Revalidate every 60 seconds so "today" always stays fresh
 export const revalidate = 60
 
@@ -76,7 +78,8 @@ async function getData() {
       .limit(8),
   ])
 
-  const live = liveMatches || []
+  // Filter out dynamically expired live matches (football > 4h, cricket > 8h)
+  const live = (liveMatches || []).filter(m => !isMatchExpired(m))
   const upcoming = allUpcoming || []
 
   // Sort helper — ascending match_time

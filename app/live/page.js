@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import MatchCard from '@/components/MatchCard'
 
+import { isMatchExpired } from '@/lib/matchHelpers'
+
 export default function LivePage() {
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +22,10 @@ export default function LivePage() {
       .eq('status', 'live')
       .gte('match_time', todayISO)   // >= today 00:00 BST — hide yesterday's stale live rows
       .order('match_time', { ascending: true })
-    setMatches(data || [])
+    
+    // Filter out expired matches
+    const activeLive = (data || []).filter(m => !isMatchExpired(m))
+    setMatches(activeLive)
     setLoading(false)
   }
 
