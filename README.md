@@ -1,15 +1,20 @@
 # StreamFy 🔴
 
-A complete sports live streaming website built with **Next.js 14**, **Tailwind CSS**, and **Supabase**. Features live match streaming, TV channels, admin panel, automatic stream health monitoring, and Telegram alerts.
+A complete sports live streaming website built with **Next.js 14**, **Vanilla CSS**, and **Supabase**. Features live match streaming with auto channel switching, TV channels with dead channel filtering, admin panel, automatic stream health monitoring, and Telegram alerts.
 
-**Live Demo:** [your-app.vercel.app](https://your-app.vercel.app)
+**Live Demo:** [streamfy.mirzashafi.com](https://streamfy.mirzashafi.com)
 
 ---
 
 ## Features
 
 - 🔴 **Live match streaming** with HLS.js (.m3u8) and iframe fallback
-- 📺 **TV Channels** grid with category filtering
+- 📺 **TV Channels** grid — auto-filters dead channels, shows only working ones
+- 🔀 **Multi-stream failover** — auto-skip to next channel if stream dies (12s timeout)
+- 📡 **M3U Playlist integration** — 167 KB-TV channels, auto-checked for availability
+- 🌍 **Bangladesh Time (BST)** — all match times shown in UTC+6, 12-hour format
+- 📅 **Smart date filtering** — only today + future matches shown, old matches auto-hidden
+- 🏆 **Sport sections** — Home has FIFA World Cup, Football, Cricket sections separately
 - 🤖 **Auto stream failover** — detects dead streams and finds replacements automatically
 - 📱 **Telegram bot alerts** — get notified when streams go down or get fixed
 - 🛡️ **Password-protected admin panel** — add/edit/delete matches and channels
@@ -23,13 +28,14 @@ A complete sports live streaming website built with **Next.js 14**, **Tailwind C
 
 | Route | Description |
 |---|---|
-| `/` | Home — live matches, upcoming matches, featured channels |
-| `/live` | Live matches only — auto-refreshes every 30s |
-| `/matches` | All matches with filter (Live/Upcoming/Finished) + search |
-| `/matches/[id]` | Watch match — video player with multi-stream failover |
-| `/channels` | TV channels grid with category filter |
-| `/channels/[id]` | Watch channel — video player |
-| `/admin` | Password-protected dashboard — full CRUD |
+| `/` | Home — Today's matches (all sports), FIFA WC section, Football, Cricket, Channels |
+| `/live` | Live matches only — auto-refreshes every 30s, BST date filtered |
+| `/matches` | All matches — filter by sport (WC/Football/Cricket) + status + search |
+| `/matches/[id]` | Watch match — channel chooser, auto-skip dead channels, multi-stream |
+| `/channels` | TV channels — only working (HTTPS) channels shown |
+| `/channels/[id]` | Watch channel — HLS video player |
+| `/watch` | Direct stream viewer via URL params |
+| `/admin` | Password-protected dashboard — full CRUD for matches & channels |
 
 ---
 
@@ -38,10 +44,10 @@ A complete sports live streaming website built with **Next.js 14**, **Tailwind C
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 14 (App Router) |
-| Styling | Tailwind CSS |
+| Styling | Vanilla CSS |
 | Database | Supabase (PostgreSQL) |
 | Video | HLS.js + iframe embed |
-| Image CDN | Cloudinary |
+| M3U Playlist | KB-TV GitHub playlist (167 channels) |
 | Deployment | Vercel |
 | Bot | Telegram Bot API |
 
@@ -68,7 +74,6 @@ Fill in `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 NEXT_PUBLIC_SITE_NAME=StreamFy
 ADMIN_PASSWORD=your_admin_password
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
@@ -173,6 +178,54 @@ https://api.telegram.org/bot{YOUR_TOKEN}/setWebhook?url=https://YOUR-APP.vercel.
 
 ---
 
+## Live Match Player
+
+When a user opens a live match, they get a **full channel chooser** with:
+
+- **DB Streams** (Stream 1/2/3 from admin panel) — shown first
+- **M3U Channels** (from KB-TV playlist, sport-matched) — shown in scrollable row
+- **Auto-skip on failure** — if a channel doesn't load within 12 seconds, it automatically switches to the next one
+- **HTTPS filtering** — on HTTPS sites, HTTP-only streams are hidden (browser security)
+
+---
+
+## M3U Playlist & Dead Channel Filtering
+
+StreamFy integrates the [KB-TV GitHub playlist](https://github.com/sanjoykb/-KB-TV-Playlist) with 167 channels.
+
+**How dead channels are filtered:**
+1. Server fetches the M3U playlist (cached 1 hour)
+2. All 167 stream URLs are concurrently checked with a 2.5s HEAD request
+3. Only channels that respond with HTTP 200/206 are returned
+4. Result: ~79 working channels out of 167 total (varies daily)
+
+The check runs automatically on every `/api/m3u-channels` request (hourly cache).
+
+---
+
+## Date Filtering (BST Timezone)
+
+All match filters use **Bangladesh Standard Time (UTC+6)** midnight as the cutoff:
+
+- Only **today's** and **future** matches are shown on home/live/matches pages
+- Past matches (yesterday and older) are automatically hidden
+- The cutoff resets at **midnight BST** (not UTC) so Bangladeshi users always see the right matches
+- Old `live`/`upcoming` database rows from previous days never appear
+
+---
+
+## Home Page Sections
+
+| Section | Contents |
+|---|---|
+| 📅 Today's Matches | All sports — live matches first, then upcoming, sorted by time |
+| 🏆 FIFA World Cup 2026 | WC live + upcoming, time sorted, links to `/matches?sport=worldcup` |
+| ⚽ Football | Plain football + WC matches (never empty during WC season) |
+| 🏏 Cricket | ICC, T20, Test matches (excludes cricket WC from FIFA WC section) |
+| 📺 TV Channels | 8 featured active channels |
+
+---
+
 ## API Routes
 
 | Route | Method | Auth | Description |
@@ -180,6 +233,7 @@ https://api.telegram.org/bot{YOUR_TOKEN}/setWebhook?url=https://YOUR-APP.vercel.
 | `/api/admin-auth` | POST | None | Verify admin password server-side |
 | `/api/check-streams` | GET | `Bearer CRON_SECRET` | Check all live streams, auto-fix dead ones |
 | `/api/find-stream` | POST | None | Search IPTV sources for a stream URL |
+| `/api/m3u-channels` | GET | None | M3U playlist channels (dead-filtered, cached 1h) |
 | `/api/telegram-webhook` | POST | Telegram secret | Handle bot commands |
 
 ### Test stream check manually
@@ -237,36 +291,38 @@ Stream sources searched (in order):
 ```
 StreamFy/
 ├── app/
-│   ├── layout.js                 # Root layout
-│   ├── page.js                   # Home page (server component)
-│   ├── live/page.js              # Live matches (client, auto-refresh)
-│   ├── matches/page.js           # All matches with filters
-│   ├── matches/[id]/page.js      # Watch match
-│   ├── channels/page.js          # TV channels
-│   ├── channels/[id]/page.js     # Watch channel
-│   ├── admin/page.js             # Admin dashboard
+│   ├── layout.js                    # Root layout + nav
+│   ├── page.js                      # Home page (server, BST date filter, sport sections)
+│   ├── live/page.js                 # Live matches (client, auto-refresh 30s)
+│   ├── matches/page.js              # All matches — sport/status filters + search
+│   ├── matches/[id]/page.js         # Watch match — channel chooser player
+│   ├── channels/page.js             # TV channels — dead-channel filtered
+│   ├── channels/[id]/page.js        # Watch channel
+│   ├── watch/page.js                # Direct stream viewer
+│   ├── admin/page.js                # Admin dashboard
 │   └── api/
-│       ├── admin-auth/route.js   # Server-side password check
-│       ├── check-streams/route.js # Cron stream checker
-│       ├── find-stream/route.js  # Auto stream finder
+│       ├── admin-auth/route.js      # Server-side password check
+│       ├── check-streams/route.js   # Cron stream checker
+│       ├── find-stream/route.js     # Auto stream finder
+│       ├── m3u-channels/route.js    # KB-TV playlist — dead-channel filter
 │       └── telegram-webhook/route.js
 ├── components/
 │   ├── Navbar.js
-│   ├── Footer.js
 │   ├── MatchCard.js
 │   ├── ChannelCard.js
-│   ├── VideoPlayer.js            # HLS.js + iframe, multi-stream failover
-│   ├── AdminTable.js
+│   ├── M3UChannelCard.js
+│   ├── VideoPlayer.js               # HLS.js + iframe, 12s timeout, auto-skip
+│   ├── LiveMatchPlayer.js           # Match player with channel chooser + auto-skip
 │   └── ErrorPage.js
 ├── lib/
-│   ├── supabase.js               # Supabase client
-│   ├── streamChecker.js          # URL health check
-│   ├── autoStreamFinder.js       # Find replacement streams
-│   ├── streamSources.js          # IPTV source parsers
-│   └── telegramAlert.js          # Telegram notifications
+│   ├── supabase.js                  # Supabase client
+│   ├── streamChecker.js             # URL health check
+│   ├── autoStreamFinder.js          # Find replacement streams
+│   ├── streamSources.js             # IPTV source parsers
+│   └── telegramAlert.js             # Telegram notifications
 ├── .env.example
-├── vercel.json                   # Cron: every hour
-└── next.config.js                # Image domains + security headers
+├── vercel.json                      # Cron: every hour
+└── next.config.js                   # Image domains + security headers
 ```
 
 ---
@@ -277,7 +333,6 @@ StreamFy/
 |---|---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | ✅ | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | ✅ | Supabase anon/public key |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | ✅ | ✅ | Cloudinary cloud name |
 | `NEXT_PUBLIC_SITE_NAME` | ✅ | ✅ | Site display name |
 | `ADMIN_PASSWORD` | ✅ | ❌ | Admin panel password (server only) |
 | `TELEGRAM_BOT_TOKEN` | ✅ | ❌ | Telegram bot token (server only) |
