@@ -15,6 +15,12 @@ export async function generateMetadata({ params }) {
 export const revalidate = 30
 
 export default async function WatchMatchPage({ params }) {
+  // Start of today in Bangladesh time (UTC+6) — exclude yesterday's stale matches
+  const nowBST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }))
+  const todayStartBST = new Date(nowBST)
+  todayStartBST.setHours(0, 0, 0, 0)
+  const todayISO = new Date(todayStartBST.getTime() - 6 * 60 * 60 * 1000).toISOString()
+
   const [{ data: match }, { data: related }] = await Promise.all([
     supabase.from('matches').select('*').eq('id', params.id).single(),
     supabase
@@ -22,7 +28,9 @@ export default async function WatchMatchPage({ params }) {
       .select('*')
       .neq('id', params.id)
       .in('status', ['live', 'upcoming'])
-      .limit(3),
+      .gte('match_time', todayISO)   // >= today 00:00 BST — no old matches
+      .order('match_time', { ascending: true })
+      .limit(6),
   ])
 
   if (!match) notFound()
