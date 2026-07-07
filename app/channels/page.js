@@ -31,7 +31,17 @@ export default function ChannelsPage() {
   const allChannels = useMemo(() => {
     // Merge: Supabase channels first, then M3U channels (deduplicate by name)
     const dbNames = new Set(dbChannels.map((c) => c.name?.toLowerCase()))
-    const uniqueM3U = m3uChannels.filter((c) => !dbNames.has(c.name?.toLowerCase()))
+    // Normalize M3U channels so they have .stream_url available
+    const uniqueM3U = m3uChannels
+      .filter((c) => !dbNames.has(c.name?.toLowerCase()))
+      .filter((c) => {
+        // On HTTPS sites, only show HTTPS streams (HTTP streams are blocked by browser)
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+          const url = c.stream_url || c.url || ''
+          return url.startsWith('https://')
+        }
+        return true
+      })
     return [...dbChannels, ...uniqueM3U]
   }, [dbChannels, m3uChannels])
 
@@ -55,9 +65,13 @@ export default function ChannelsPage() {
           {!isFullyLoading && (
             <p className="text-sm text-gray-500 mt-1">
               {filtered.length} channels
-              {m3uChannels.length > 0 && (
+              {m3uLoading ? (
+                <span className="ml-2 px-2 py-0.5 bg-[#1a1a1a] text-gray-500 border border-[#2a2a2a] rounded text-xs animate-pulse">
+                  checking live channels...
+                </span>
+              ) : m3uChannels.length > 0 && (
                 <span className="ml-2 px-2 py-0.5 bg-green-900/30 text-green-400 border border-green-800 rounded text-xs">
-                  + {m3uChannels.length} from KB-TV Live
+                  ✓ {m3uChannels.length} verified live
                 </span>
               )}
             </p>

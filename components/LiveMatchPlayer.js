@@ -27,7 +27,11 @@ function filterM3UChannels(m3uChannels, match) {
     const name = ch.name?.toLowerCase() || ''
     for (const k of keys) { if (name.includes(k)) return true }
     return false
-  }).slice(0, 20)
+  }).slice(0, 20).map(ch => ({
+    // Normalize: always expose .url (M3U uses stream_url, DB streams use url)
+    ...ch,
+    url: ch.url || ch.stream_url,
+  }))
 }
 
 // ─── HLS Player core ─────────────────────────────────────────────────────────
@@ -142,10 +146,10 @@ export default function LiveMatchPlayer({ match }) {
   // Filter relevant M3U channels for this match
   const relevantM3U = filterM3UChannels(m3uChannels, match)
 
-  // All channels merged (Filter out HTTP if we are on HTTPS to avoid Mixed Content block)
+  // All channels merged — filter out HTTP streams on HTTPS sites (Mixed Content block)
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
   const allChannels = [...dbStreams, ...relevantM3U].filter(
-    ch => !isHttps || ch.url.startsWith('https://')
+    ch => ch.url && (!isHttps || ch.url.startsWith('https://'))
   )
   const activeChannel = allChannels[activeIdx]
 
