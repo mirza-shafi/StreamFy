@@ -37,18 +37,34 @@ export default function VideoPlayer({ streamUrl, streamUrl2, streamUrl3, backupS
       return
     }
 
+    let timer = null
+    const startTimeout = () => {
+      timer = setTimeout(() => {
+        tryNext()
+      }, 12000) // 12 seconds max loading
+    }
+
     let hls
     const init = async () => {
       const Hls = (await import('hls.js')).default
       if (hlsRef.current) { hlsRef.current.destroy() }
 
       if (Hls.isSupported()) {
-        hls = new Hls()
+        hls = new Hls({
+          manifestLoadingMaxRetry: 1,
+          manifestLoadingTimeOut: 8000,
+          levelLoadingMaxRetry: 1,
+          levelLoadingTimeOut: 8000,
+          fragLoadingMaxRetry: 1,
+          fragLoadingTimeOut: 8000,
+        })
         hlsRef.current = hls
+        startTimeout()
         hls.loadSource(currentUrl)
         hls.attachMedia(videoRef.current)
 
         hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+          clearTimeout(timer)
           setLoading(false)
           // Extract quality levels
           const lvls = data.levels.map((l, i) => ({
@@ -65,12 +81,22 @@ export default function VideoPlayer({ streamUrl, streamUrl2, streamUrl3, backupS
         })
 
         hls.on(Hls.Events.ERROR, (_, data) => {
-          if (data.fatal) tryNext()
+          if (data.fatal) {
+            clearTimeout(timer)
+            tryNext()
+          }
         })
       } else if (videoRef.current?.canPlayType('application/vnd.apple.mpegurl')) {
+        startTimeout()
         videoRef.current.src = currentUrl
-        videoRef.current.onloadedmetadata = () => setLoading(false)
-        videoRef.current.onerror = () => tryNext()
+        videoRef.current.onloadedmetadata = () => {
+          clearTimeout(timer)
+          setLoading(false)
+        }
+        videoRef.current.onerror = () => {
+          clearTimeout(timer)
+          tryNext()
+        }
       } else {
         tryNext()
       }
@@ -78,6 +104,7 @@ export default function VideoPlayer({ streamUrl, streamUrl2, streamUrl3, backupS
     init()
 
     return () => {
+      clearTimeout(timer)
       clearTimeout(iframeTimerRef.current)
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
     }

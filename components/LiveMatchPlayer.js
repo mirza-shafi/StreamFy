@@ -49,26 +49,61 @@ function HLSPlayer({ url, title, onError, onReady }) {
     const init = async () => {
       const Hls = (await import('hls.js')).default
       cleanup()
+
+      let timer = null
+      const startTimeout = () => {
+        timer = setTimeout(() => {
+          cleanup()
+          onError?.()
+        }, 12000) // 12 seconds max loading
+      }
+
       if (Hls.isSupported()) {
-        const hls = new Hls({ enableWorker: true, lowLatencyMode: true })
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          manifestLoadingMaxRetry: 1,
+          manifestLoadingTimeOut: 8000,
+          levelLoadingMaxRetry: 1,
+          levelLoadingTimeOut: 8000,
+          fragLoadingMaxRetry: 1,
+          fragLoadingTimeOut: 8000,
+        })
         hlsRef.current = hls
+        startTimeout()
         hls.loadSource(url)
         hls.attachMedia(videoRef.current)
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          clearTimeout(timer)
           onReady?.()
           videoRef.current?.play().catch(() => {})
         })
-        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { cleanup(); onError?.() } })
+        hls.on(Hls.Events.ERROR, (_, d) => {
+          if (d.fatal) {
+            clearTimeout(timer)
+            cleanup()
+            onError?.()
+          }
+        })
       } else if (videoRef.current?.canPlayType('application/vnd.apple.mpegurl')) {
+        startTimeout()
         videoRef.current.src = url
-        videoRef.current.onloadedmetadata = () => onReady?.()
-        videoRef.current.onerror = () => onError?.()
+        videoRef.current.onloadedmetadata = () => {
+          clearTimeout(timer)
+          onReady?.()
+        }
+        videoRef.current.onerror = () => {
+          clearTimeout(timer)
+          onError?.()
+        }
       } else {
         onError?.()
       }
     }
     init()
-    return cleanup
+    return () => {
+      cleanup()
+    }
   }, [url, onError, onReady])
 
   const isHLS = url?.includes('.m3u8') || url?.includes('mpegurl') || url?.endsWith('.php')
