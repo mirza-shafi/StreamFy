@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import MatchCard from '@/components/MatchCard'
 import { isMatchExpired } from '@/lib/matchHelpers'
 
 const STATUS_TABS = ['All', 'Live', 'Upcoming', 'Finished']
