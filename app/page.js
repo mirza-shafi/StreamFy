@@ -163,33 +163,33 @@ export default async function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero */}
-      <section className="text-center py-12 mb-10">
-        <span className="inline-flex items-center gap-2 bg-red-900/30 text-[#e63946] text-xs font-bold px-4 py-2 rounded-full border border-red-800/50 mb-6">
+      <section className="text-center pt-6 pb-8 mb-6">
+        <span className="inline-flex items-center gap-2 bg-red-900/30 text-[#e63946] text-xs font-bold px-4 py-2 rounded-full border border-red-800/50 mb-4">
           <span className="w-2 h-2 rounded-full bg-[#e63946] live-dot" />
           LIVE NOW
         </span>
-        <h1 className="text-4xl md:text-6xl font-black text-white mb-4">
+        <h1 className="text-3xl md:text-5xl font-black text-white mb-3">
           Watch Sports <span className="text-[#e63946]">Live</span>
         </h1>
-        <p className="text-gray-400 text-lg max-w-xl mx-auto mb-8">
+        <p className="text-gray-400 text-base max-w-xl mx-auto mb-6">
           FIFA World Cup 2026, Cricket World Cup, and live sports streaming.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
           <Link
             href="/matches?sport=worldcup"
-            className="px-6 py-3 bg-[#e63946] text-white rounded-xl font-semibold hover:bg-red-500 transition-colors"
+            className="px-5 py-2.5 text-sm bg-[#e63946] text-white rounded-xl font-semibold hover:bg-red-500 transition-colors"
           >
             🏆 World Cup
           </Link>
           <Link
             href="/matches?sport=cricket"
-            className="px-6 py-3 bg-[#2a2a2a] text-white rounded-xl font-semibold hover:bg-[#3a3a3a] transition-colors"
+            className="px-5 py-2.5 text-sm bg-[#2a2a2a] text-white rounded-xl font-semibold hover:bg-[#3a3a3a] transition-colors"
           >
             🏏 Cricket
           </Link>
           <Link
             href="/matches"
-            className="px-6 py-3 bg-[#2a2a2a] text-white rounded-xl font-semibold hover:bg-[#3a3a3a] transition-colors"
+            className="px-5 py-2.5 text-sm bg-[#2a2a2a] text-white rounded-xl font-semibold hover:bg-[#3a3a3a] transition-colors"
           >
             ⚽ All Matches
           </Link>
