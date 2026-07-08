@@ -221,7 +221,7 @@ export default async function HomePage() {
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {todayMatches.map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-72">
+              <div key={m.id} className="flex-shrink-0 w-64">
                 <MatchCard match={m} />
               </div>
             ))}
@@ -247,7 +247,7 @@ export default async function HomePage() {
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {[...todayWC, ...upWC].map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-72">
+              <div key={m.id} className="flex-shrink-0 w-64">
                 <MatchCard match={m} />
               </div>
             ))}
@@ -273,7 +273,7 @@ export default async function HomePage() {
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {[...todayFootball, ...upFootball].map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-72">
+              <div key={m.id} className="flex-shrink-0 w-64">
                 <MatchCard match={m} />
               </div>
             ))}
@@ -299,7 +299,7 @@ export default async function HomePage() {
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {[...todayCricket, ...upCricket].map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-72">
+              <div key={m.id} className="flex-shrink-0 w-64">
                 <MatchCard match={m} />
               </div>
             ))}
