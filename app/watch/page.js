@@ -88,6 +88,12 @@ function WatchContent() {
               </div>
             )}
           </div>
+
+          <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              ⚠️ Stream বন্ধ হয়ে গেলে পেজ <span className="text-white font-medium">Refresh</span> করুন অথবা <span className="text-[#e63946] font-medium">অন্য চ্যানেলে</span> যান।
+            </p>
+          </div>
         </div>
       </div>
     </div>
