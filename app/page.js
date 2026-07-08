@@ -199,13 +199,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── TODAY'S MATCHES (All Sports, time-sorted, live first) ── */}
+      {/* ── TODAY'S MATCHES ── */}
       {todayMatches.length > 0 && (
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-xl font-bold text-white">📅 Today&apos;s Matches</h2>
-              <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs px-3 py-1 rounded-full">
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-white">📅 Today&apos;s Matches</h2>
+              <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs px-2.5 py-0.5 rounded-full">
                 {todayLabel}
               </span>
               {liveMatches.length > 0 && (
@@ -215,14 +215,15 @@ export default async function HomePage() {
                 </span>
               )}
             </div>
-            <Link href="/matches" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
+            <Link href="/matches" className="text-xs text-[#e63946] hover:text-red-400 transition-colors whitespace-nowrap">
               All matches →
             </Link>
           </div>
-          {/* Live first, then upcoming — all sorted by match_time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {todayMatches.map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-64">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
@@ -230,24 +231,25 @@ export default async function HomePage() {
 
       {/* ── FIFA WORLD CUP 2026 ── */}
       {(todayWC.length > 0 || upWC.length > 0) && (
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-white">🏆 FIFA World Cup 2026</h2>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-white">🏆 FIFA World Cup 2026</h2>
               {todayWC.filter(m => m.status === 'live').length > 0 && (
                 <span className="bg-red-900/30 text-[#e63946] text-xs font-bold px-2 py-0.5 rounded-full border border-red-800/50">
                   {todayWC.filter(m => m.status === 'live').length} LIVE
                 </span>
               )}
             </div>
-            <Link href="/matches?sport=worldcup" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
-              All WC matches →
+            <Link href="/matches?sport=worldcup" className="text-xs text-[#e63946] hover:text-red-400 transition-colors whitespace-nowrap">
+              All WC →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Today's WC first, then upcoming WC — both already time-sorted */}
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {[...todayWC, ...upWC].map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-64">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
@@ -255,23 +257,25 @@ export default async function HomePage() {
 
       {/* ── FOOTBALL ── */}
       {(todayFootball.length > 0 || upFootball.length > 0) && (
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-white">⚽ Football</h2>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-white">⚽ Football</h2>
               {todayFootball.filter(m => m.status === 'live').length > 0 && (
                 <span className="bg-red-900/30 text-[#e63946] text-xs font-bold px-2 py-0.5 rounded-full border border-red-800/50">
                   {todayFootball.filter(m => m.status === 'live').length} LIVE
                 </span>
               )}
             </div>
-            <Link href="/matches?sport=football" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
+            <Link href="/matches?sport=football" className="text-xs text-[#e63946] hover:text-red-400 transition-colors whitespace-nowrap">
               All football →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {[...todayFootball, ...upFootball].map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-64">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
@@ -279,23 +283,25 @@ export default async function HomePage() {
 
       {/* ── CRICKET ── */}
       {(todayCricket.length > 0 || upCricket.length > 0) && (
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-white">🏏 Cricket</h2>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-white">🏏 Cricket</h2>
               {todayCricket.filter(m => m.status === 'live').length > 0 && (
                 <span className="bg-red-900/30 text-[#e63946] text-xs font-bold px-2 py-0.5 rounded-full border border-red-800/50">
                   {todayCricket.filter(m => m.status === 'live').length} LIVE
                 </span>
               )}
             </div>
-            <Link href="/matches?sport=cricket" className="text-sm text-[#e63946] hover:text-red-400 transition-colors">
+            <Link href="/matches?sport=cricket" className="text-xs text-[#e63946] hover:text-red-400 transition-colors whitespace-nowrap">
               All cricket →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {[...todayCricket, ...upCricket].map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-64">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
