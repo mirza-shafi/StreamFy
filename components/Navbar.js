@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 export default function Navbar() {
@@ -21,7 +22,7 @@ export default function Navbar() {
     <nav className="fixed top-0 w-full z-50 bg-[#111111] border-b border-[#2a2a2a]">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-[#e63946] text-2xl">●</span>
+          <Image src="/icon.png" alt="StreamFy" width={32} height={32} className="rounded-lg" />
           <span className="text-white font-bold text-xl">StreamFy</span>
         </Link>
 
