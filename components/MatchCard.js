@@ -40,12 +40,12 @@ export default function MatchCard({ match }) {
       {/* Teams */}
       <div className="flex items-center justify-between gap-2 my-3">
         <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-          <span className="text-2xl">{team1_flag || '🏆'}</span>
+          <span className="text-4xl">{team1_flag || '🏆'}</span>
           <span className="text-sm font-semibold text-white truncate w-full text-center">{team1}</span>
         </div>
         <span className="text-gray-500 font-bold text-sm shrink-0">VS</span>
         <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-          <span className="text-2xl">{team2_flag || '🏆'}</span>
+          <span className="text-4xl">{team2_flag || '🏆'}</span>
           <span className="text-sm font-semibold text-white truncate w-full text-center">{team2}</span>
         </div>
       </div>
