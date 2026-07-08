@@ -66,7 +66,6 @@ function WatchContent() {
                 <div className="flex items-center gap-2 mt-2">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
                   <span className="text-sm text-green-400 font-medium">Live Stream</span>
-                  <span className="text-xs text-gray-600 ml-2">via KB-TV Playlist</span>
                 </div>
               </div>
             </div>
