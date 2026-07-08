@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MatchCard from '@/components/MatchCard'
+import LiveClock from '@/components/LiveClock'
 import { isMatchExpired, getTodayISO } from '@/lib/matchHelpers'
 
 const STATUS_TABS = ['All', 'Live', 'Upcoming', 'Finished']
@@ -104,9 +105,12 @@ function MatchesContent() {
           {statusTab === 'Finished' ? '🕐 Past Matches' : '📅 Matches'}
         </h1>
         {statusTab !== 'Finished' && (
-          <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs px-3 py-1 rounded-full">
-            {new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </span>
+          <>
+            <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 text-xs px-3 py-1 rounded-full">
+              {new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </span>
+            <LiveClock />
+          </>
         )}
       </div>
 
