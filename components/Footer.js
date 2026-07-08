@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   return (
@@ -6,7 +7,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-[#e63946] text-xl">●</span>
+            <Image src="/icon.png" alt="StreamFy" width={28} height={28} className="rounded-lg" />
             <span className="font-bold text-lg">StreamFy</span>
           </Link>
           <div className="flex gap-6 text-sm text-gray-400">
