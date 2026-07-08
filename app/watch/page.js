@@ -78,10 +78,6 @@ function WatchContent() {
           <h2 className="text-base font-bold text-white mb-3">Stream Info</h2>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Source</span>
-              <span className="text-green-400 font-medium">KB-TV Playlist</span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-gray-500">Quality</span>
               <span className="text-white">{quality}</span>
             </div>
@@ -91,16 +87,6 @@ function WatchContent() {
                 <span className="text-white">{category}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-gray-500">Auto-update</span>
-              <span className="text-white">✓ GitHub</span>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
-            <p className="text-xs text-gray-600">
-              This stream is sourced from KB-TV Playlist which auto-updates on GitHub. If a stream is not working, try refreshing the page.
-            </p>
           </div>
         </div>
       </div>
