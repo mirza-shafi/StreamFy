@@ -219,9 +219,11 @@ export default async function HomePage() {
               All matches →
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {todayMatches.map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-[300px]">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
@@ -243,9 +245,11 @@ export default async function HomePage() {
               All WC →
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {[...todayWC, ...upWC].map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-[300px]">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
@@ -267,9 +271,11 @@ export default async function HomePage() {
               All football →
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {[...todayFootball, ...upFootball].map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-[300px]">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
@@ -291,9 +297,11 @@ export default async function HomePage() {
               All cricket →
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {[...todayCricket, ...upCricket].map((m) => (
-              <MatchCard key={m.id} match={m} />
+              <div key={m.id} className="flex-shrink-0 w-[300px]">
+                <MatchCard match={m} />
+              </div>
             ))}
           </div>
         </section>
