@@ -9,17 +9,20 @@ A complete sports live streaming website built with **Next.js 14**, **Vanilla CS
 ## Features
 
 - 🔴 **Live match streaming** with HLS.js (.m3u8) and iframe fallback
-- 📺 **TV Channels** grid — auto-filters dead channels, shows only working ones
+- 📺 **TV Channels** — auto-filters dead channels, shows only working ones in horizontal rows
 - 🔀 **Multi-stream failover** — auto-skip to next channel if stream dies (12s timeout)
 - 📡 **M3U Playlist integration** — 167 KB-TV channels, auto-checked for availability
 - 🌍 **Bangladesh Time (BST)** — all match times shown in UTC+6, 12-hour format
+- 🕐 **Live clock** — real-time ticking clock on the Matches page
 - 📅 **Smart date filtering** — only today + future matches shown, old matches auto-hidden
-- 🏆 **Sport sections** — Home has FIFA World Cup, Football, Cricket sections separately
+- 🏆 **Sport sections** — Home has FIFA World Cup, Football, Cricket in horizontal scrollable rows
+- ⏱️ **Auto-expiry** — football matches auto-expire after 3h, cricket after 8h
 - 🤖 **Auto stream failover** — detects dead streams and finds replacements automatically
 - 📱 **Telegram bot alerts** — get notified when streams go down or get fixed
 - 🛡️ **Password-protected admin panel** — add/edit/delete matches and channels
 - ⏱️ **Hourly cron job** via Vercel — checks all streams automatically
 - 📊 **Stream logs** — full history of all stream events
+- 🎨 **Custom favicon** — branded red/black icon
 - 🌙 **Dark theme** — fully responsive mobile-first design
 
 ---
@@ -218,11 +221,11 @@ All match filters use **Bangladesh Standard Time (UTC+6)** midnight as the cutof
 
 | Section | Contents |
 |---|---|
-| 📅 Today's Matches | All sports — live matches first, then upcoming, sorted by time |
-| 🏆 FIFA World Cup 2026 | WC live + upcoming, time sorted, links to `/matches?sport=worldcup` |
-| ⚽ Football | Plain football + WC matches (never empty during WC season) |
-| 🏏 Cricket | ICC, T20, Test matches (excludes cricket WC from FIFA WC section) |
-| 📺 TV Channels | 8 featured active channels |
+| 📅 Today's Matches | All sports — live first, then upcoming, horizontal scrollable row |
+| 🏆 FIFA World Cup 2026 | WC live + upcoming, horizontal row, links to `/matches?sport=worldcup` |
+| ⚽ Football | Plain football matches, horizontal row |
+| 🏏 Cricket | ICC, T20, Test matches, horizontal row |
+| 📺 TV Channels | Active M3U channels in horizontal scrollable row |
 
 ---
 
@@ -311,15 +314,19 @@ StreamFy/
 │   ├── MatchCard.js
 │   ├── ChannelCard.js
 │   ├── M3UChannelCard.js
+│   ├── HomepageChannels.js          # Client component — M3U channels horizontal row
+│   ├── LiveClock.js                 # Real-time ticking clock (BST)
 │   ├── VideoPlayer.js               # HLS.js + iframe, 12s timeout, auto-skip
 │   ├── LiveMatchPlayer.js           # Match player with channel chooser + auto-skip
 │   └── ErrorPage.js
 ├── lib/
 │   ├── supabase.js                  # Supabase client
+│   ├── matchHelpers.js              # isMatchExpired(), getTodayISO() — BST timezone utils
 │   ├── streamChecker.js             # URL health check
 │   ├── autoStreamFinder.js          # Find replacement streams
 │   ├── streamSources.js             # IPTV source parsers
 │   └── telegramAlert.js             # Telegram notifications
+├── app/icon.png                     # Custom favicon
 ├── .env.example
 ├── vercel.json                      # Cron: every hour
 └── next.config.js                   # Image domains + security headers
