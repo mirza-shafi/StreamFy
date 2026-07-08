@@ -219,11 +219,9 @@ export default async function HomePage() {
               All matches →
             </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {todayMatches.map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-64">
-                <MatchCard match={m} />
-              </div>
+              <MatchCard key={m.id} match={m} />
             ))}
           </div>
         </section>
@@ -245,11 +243,9 @@ export default async function HomePage() {
               All WC →
             </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...todayWC, ...upWC].map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-64">
-                <MatchCard match={m} />
-              </div>
+              <MatchCard key={m.id} match={m} />
             ))}
           </div>
         </section>
@@ -271,11 +267,9 @@ export default async function HomePage() {
               All football →
             </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...todayFootball, ...upFootball].map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-64">
-                <MatchCard match={m} />
-              </div>
+              <MatchCard key={m.id} match={m} />
             ))}
           </div>
         </section>
@@ -297,11 +291,9 @@ export default async function HomePage() {
               All cricket →
             </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...todayCricket, ...upCricket].map((m) => (
-              <div key={m.id} className="flex-shrink-0 w-64">
-                <MatchCard match={m} />
-              </div>
+              <MatchCard key={m.id} match={m} />
             ))}
           </div>
         </section>
