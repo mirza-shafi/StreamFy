@@ -39,7 +39,7 @@ function MatchesContent() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    const todayISO = getTodayISO()
+    const recentISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
     if (statusTab === 'Finished') {
       // "Finished" tab: show old finished matches (user explicitly wants these)
@@ -56,7 +56,7 @@ function MatchesContent() {
         .from('matches')
         .select('*')
         .neq('status', 'finished')          // exclude finished
-        .gte('match_time', todayISO)        // today onwards only
+        .gte('match_time', recentISO)       // allow matches from the last 24 hours
         .order('match_time', { ascending: true })
         .then(({ data }) => {
           const activeMatches = (data || []).filter(m => {

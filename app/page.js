@@ -48,22 +48,21 @@ function formatTodayDate() {
 
 
 async function getData() {
-  const todayISO = getTodayISO()
+  const recentISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
   const [{ data: liveMatches }, { data: allUpcoming }, { data: dbChannels }] = await Promise.all([
-    // Live matches — only from today onwards (skip stale 'live' rows from previous days)
+    // Live matches — rely on isMatchExpired to filter out stale ones, allowing matches spanning midnight
     supabase
       .from('matches')
       .select('*')
       .eq('status', 'live')
-      .gte('match_time', todayISO)   // >= today 00:00 BST — no yesterday
       .order('match_time'),
     // Upcoming: only from today onwards, never finished
     supabase
       .from('matches')
       .select('*')
       .eq('status', 'upcoming')
-      .gte('match_time', todayISO)   // >= today 00:00 BST — no old matches
+      .gte('match_time', recentISO)   // allow matches from the last 24 hours
       .order('match_time')
       .limit(50),
     // All active DB channels
