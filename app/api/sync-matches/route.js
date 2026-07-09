@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -46,7 +48,7 @@ async function fetchFootballDataOrg() {
     try {
       const res = await fetch(
         `https://api.football-data.org/v4/competitions/${comp}/matches?status=LIVE,IN_PLAY,PAUSED,TIMED,SCHEDULED`,
-        { headers: { 'X-Auth-Token': FD_KEY } }
+        { headers: { 'X-Auth-Token': FD_KEY }, cache: 'no-store' }
       )
       if (!res.ok) continue
       // Respect rate limit headers
@@ -84,8 +86,8 @@ async function fetchCricket() {
   const hdrs = { 'x-rapidapi-key': RAPIDAPI_KEY, 'x-rapidapi-host': 'cricbuzz-cricket.p.rapidapi.com' }
   try {
     const [liveRes, upRes] = await Promise.all([
-      fetch('https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live', { headers: hdrs }),
-      fetch('https://cricbuzz-cricket.p.rapidapi.com/matches/v1/upcoming', { headers: hdrs }),
+      fetch('https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live', { headers: hdrs, cache: 'no-store' }),
+      fetch('https://cricbuzz-cricket.p.rapidapi.com/matches/v1/upcoming', { headers: hdrs, cache: 'no-store' }),
     ])
 
     const process = (data, defaultStatus) => {
