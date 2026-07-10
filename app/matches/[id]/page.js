@@ -12,12 +12,12 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 import { getTodayISO } from '@/lib/matchHelpers'
 
 export default async function WatchMatchPage({ params }) {
-  const todayISO = getTodayISO()
+  const recentISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
   const [{ data: match }, { data: related }] = await Promise.all([
     supabase.from('matches').select('*').eq('id', params.id).single(),
@@ -26,7 +26,7 @@ export default async function WatchMatchPage({ params }) {
       .select('*')
       .neq('id', params.id)
       .in('status', ['live', 'upcoming'])
-      .gte('match_time', todayISO)   // >= today 00:00 BST — no old matches
+      .gte('match_time', recentISO)   // allow matches from the last 24 hours
       .order('match_time', { ascending: true })
       .limit(6),
   ])
